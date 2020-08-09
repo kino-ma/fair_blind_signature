@@ -1,7 +1,9 @@
 const STR_LEN = 20;
 
-type signature_t = { s: number, T: [number, number][] };
-
+type T_t = { alpha: number, v: number };
+type signature_t = { s: number, T: T_t[] };
+type encrypt_t = (x: number) => number;
+type decrypt_t = (x: number) => number;
 /*
  * m: メッセージ
  * ID: セッション固有の識別子
@@ -58,7 +60,7 @@ function sign_protocol({ m, ID, n, e, Ej, H, k }
         if (!valid) {
             console.log("invalid");
             console.log(x, y);
-            const signature: signature_t = { s: 0, T: [[0, 0]] };
+            const signature: signature_t = { s: 0, T: [{alpha: alpha[0], v: v[0]}] };
             const u_i: number = u[0];
             return { signature, u_i };
         }
@@ -73,7 +75,7 @@ function sign_protocol({ m, ID, n, e, Ej, H, k }
     let r_: number[] = S_.map(i => r[i]);
     let s: number = b / PI(r_) % n
 
-    let T: [number, number][] = S_.map(i => [alpha[i], v[i]]);
+    let T: T_t[] = S_.map(i => ({ alpha: alpha[i], v: v[i] }));
 
     const signature: signature_t = { T, s };
     return { signature, u_i: u[1] };
@@ -145,13 +147,16 @@ function range(start: number, end: number): number[] {
     return arr;
 }
 
-function typeI(u_i: number, Dj: (x: number) => number): number {
+function typeI(u_i: number, Dj: decrypt_t): number {
     const decrypted = Dj(u_i);
     const m = decrypted >> (STR_LEN + 1);
     return m;
 }
 
-function typeII(s: number, T: [[number, number]]) {
+function typeII(signature: signature_t, Dj: decrypt_t): number {
+    const decrypted = Dj(signature.T[1].v);
+    const ID = decrypted >> (STR_LEN + 1);
+    return ID;
 }
 
 function assert<T extends { toString(): string }>(text: string, v1:T, v2:T) {
@@ -191,7 +196,8 @@ function main() {
     const { signature, u_i } = sign_protocol({ m, ID, n, e, Ej, H, k });
 
     const Dj = (num: number) => num - 1;
-    check("typeI:", typeI(u_i, Dj), m);
+    check("typeI: ", typeI(u_i, Dj), m);
+    check("typeII:", typeII(signature, Dj), ID);
 }
 
 //test();
