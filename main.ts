@@ -1,4 +1,7 @@
-const STR_LEN = 20
+const STR_LEN = 20;
+
+type signature_t = { s: number, T: [number, number][] };
+
 /*
  * m: メッセージ
  * ID: セッション固有の識別子
@@ -9,14 +12,20 @@ const STR_LEN = 20
  * k: セキュリティパラメータ
  */
 
-function sign_protocol(m:  number,
-                       ID: number,
-                       n:  number,
-                       e:  number,
-                       Ej: (x: number) => number,
-                       H:  (x: number) => number,
-                       k:  number)
-                       : {T: [number, number][], u_i: number}
+function sign_protocol({ m, ID, n, e, Ej, H, k }
+    : {
+        m: number;
+        ID: number;
+        n: number;
+        e: number;
+        Ej: (x: number) => number;
+        H: (x: number) => number;
+        k: number;
+    })
+    : {
+        signature: signature_t,
+        u_i: number
+    }
 {
     // iが1から始まるのでダミーを入れる
     let r: number[] = [0];
@@ -49,7 +58,9 @@ function sign_protocol(m:  number,
         if (!valid) {
             console.log("invalid");
             console.log(x, y);
-            return {T: [[0,0]], u_i: 0};
+            const signature: signature_t = { s: 0, T: [[0, 0]] };
+            const u_i: number = u[0];
+            return { signature, u_i };
         }
     }
 
@@ -64,8 +75,8 @@ function sign_protocol(m:  number,
 
     let T: [number, number][] = S_.map(i => [alpha[i], v[i]]);
 
-    console.log("T:", T);
-    return { T, u_i: u[1] };
+    const signature: signature_t = { T, s };
+    return { signature, u_i: u[1] };
 }
 
 function random_choose_int(n: number): number {
@@ -177,7 +188,7 @@ function main() {
     const H = (num: number) => num * 2;
     const k = 40;
 
-    const { T, u_i } = sign_protocol(m, ID, n, e, Ej, H, k);
+    const { signature, u_i } = sign_protocol({ m, ID, n, e, Ej, H, k });
 
     const Dj = (num: number) => num - 1;
     check("typeI:", typeI(u_i, Dj), m);
