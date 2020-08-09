@@ -127,13 +127,19 @@ function typeI(us: number[], is: number[]) {
 function typeII(s: number, T: [[number, number]]) {
 }
 
+function assert<T extends { toString(): string }>(text: string, v1:T, v2:T) {
+    if (v1.toString() !== v2.toString()) {
+        console.log("wrong.", text, v1, v2);
+    }
+}
+
 function test() {
     console.log("random_choose_int(10):", random_choose_int(10));
-    console.log("concat(3, 1):", concat(3, 1));
+    assert("concat(3, 1):", concat(3, 1), 7);
     console.log("random_set(10):", random_set(10));
-    console.log("complement(range(10), range(5)):", complement(range(1, 10), range(1, 5)));
-    console.log("PI(range(1, 5)):", PI(range(1, 5)));
-    console.log("range(1, 5)", range(1, 5));
+    assert("complement(range(10), range(5)):", complement(range(1, 10), range(1, 5)), [6, 7, 8, 9, 10]);
+    assert("PI(range(1, 5)):", PI(range(1, 5)), 1*2*3*4*5);
+    assert("range(1, 5)", range(1, 5), [1,2,3,4,5]);
 }
 
 function main() {
@@ -148,5 +154,5 @@ function main() {
     sign_protocol(m, ID, n, e, Ej, H, k);
 }
 
-test();
+//test();
 main();
