@@ -1,3 +1,4 @@
+const STR_LEN = 20
 /*
  * m: メッセージ
  * ID: セッション固有の識別子
@@ -14,7 +15,8 @@ function sign_protocol(m:  number,
                        e:  number,
                        Ej: (x: number) => number,
                        H:  (x: number) => number,
-                       k:  number) : [number, number][]
+                       k:  number)
+                       : {T: [number, number][], u_i: number}
 {
     // iが1から始まるのでダミーを入れる
     let r: number[] = [0];
@@ -28,8 +30,8 @@ function sign_protocol(m:  number,
 
     for (let i = 1; i <= 2 * k; i++) {
         r[i] = random_choose_int(n);
-        alpha[i] = random_choose_int(10000);
-        beta[i] = random_choose_int(10000);
+        alpha[i] = random_choose_str();
+        beta[i] = random_choose_str();
 
         u[i] = Ej(concat(m, alpha[i]));
         v[i] = Ej(concat(ID, beta[i]));
@@ -47,7 +49,7 @@ function sign_protocol(m:  number,
         if (!valid) {
             console.log("invalid");
             console.log(x, y);
-            return [[0, 0]];
+            return {T: [[0,0]], u_i: 0};
         }
     }
 
@@ -63,12 +65,23 @@ function sign_protocol(m:  number,
     let T: [number, number][] = S_.map(i => [alpha[i], v[i]]);
 
     console.log("T:", T);
-    return T;
+    return { T, u_i: u[1] };
 }
 
 function random_choose_int(n: number): number {
     let r = Math.random();
     return Math.floor(r * n);
+}
+
+function random_choose_str(): number {
+    let r: number;
+    let max: number = Math.pow(2, STR_LEN) - 1;
+
+    do {
+        r = random_choose_int(max);
+    } while (Math.ceil(Math.log2(r)) < STR_LEN)
+
+    return r;
 }
 
 function concat(x: number, y: number): number {
@@ -77,7 +90,7 @@ function concat(x: number, y: number): number {
      * 例； concat(3, 1) => 7
      *      concat(4, 1) => 9
      */
-    let y_len = Math.floor(Math.log2(y)) + 1;
+    let y_len = Math.ceil(Math.log2(y)) + 1;
     return x << y_len | y;
 }
 
@@ -121,7 +134,10 @@ function range(start: number, end: number): number[] {
     return arr;
 }
 
-function typeI(us: number[], is: number[]) {
+function typeI(u_i: number, Dj: (x: number) => number): number {
+    const decrypted = Dj(u_i);
+    const m = decrypted >> (STR_LEN + 1);
+    return m;
 }
 
 function typeII(s: number, T: [[number, number]]) {
@@ -131,6 +147,16 @@ function assert<T extends { toString(): string }>(text: string, v1:T, v2:T) {
     if (v1.toString() !== v2.toString()) {
         console.log("wrong.", text, v1, v2);
     }
+}
+
+function check<T extends { toString(): string }>(text: string, v1:T, v2:T) {
+    let t = "";
+    if (v1.toString() === v2.toString()) {
+        t = "ok.";
+    } else {
+        t = "wrong.";
+    }
+    console.log(text, t, v1, v2);
 }
 
 function test() {
@@ -149,9 +175,12 @@ function main() {
     const e = 7;
     const Ej = (num: number) => num + 1;
     const H = (num: number) => num * 2;
-    const k = 10;
+    const k = 40;
 
-    sign_protocol(m, ID, n, e, Ej, H, k);
+    const { T, u_i } = sign_protocol(m, ID, n, e, Ej, H, k);
+
+    const Dj = (num: number) => num - 1;
+    check("typeI:", typeI(u_i, Dj), m);
 }
 
 //test();
