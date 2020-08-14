@@ -48,14 +48,14 @@ function sign_protocol({ m, ID, n, e, Ej, H, k }
         u[i] = Ej(concat(m, alpha[i]));
         v[i] = Ej(concat(ID, beta[i]));
 
-        ms[i] = (Math.pow(r[i], e) * H(concat(u[i], v[i]))) % n
+        ms[i] = (Math.pow(r[i], e) /*% n*/ * H(concat(u[i], v[i]))) % n
     }
 
     let S: number[] = random_set(2 * k);
 
     for (let i of S) {
         let x: number = ms[i];
-        let y: number = ( Math.pow(r[i],  e) * H( concat(u[i], Ej(concat(ID, beta[i]))) ) ) % n;
+        let y: number = ( Math.pow(r[i],  e) * (H( concat(u[i], Ej(concat(ID, beta[i]))) ) /*% n*/) ) % n;
         let valid = x == y;
 
         if (!valid) {
@@ -71,10 +71,11 @@ function sign_protocol({ m, ID, n, e, Ej, H, k }
     let S_: number[] = complement(range(1, 2*k), S);
 
     let m_: number[] = S_.map((i: number) => ms[i]);
+    //let b: number = Math.pow( PI_mod(m_, n), 1/e ) % n;
     let b: number = Math.pow( PI(m_), 1/e ) % n;
 
     let r_: number[] = S_.map(i => r[i]);
-    let s: number = b / PI(r_) % n
+    let s: number = Math.floor(b / PI(r_)) % n
 
     let T: T_t[] = S_.map(i => ({ alpha: alpha[i], v: v[i] }));
 
@@ -141,6 +142,11 @@ function complement(population: number[], src: number[]): number[] {
 
 function PI(src: number[]): number {
     return src.reduce((a,b) => a * b);
+}
+
+function PI_mod(src: number[], law: number): number {
+    const src_mod = src.map(n => n % law);
+    return PI(src_mod);
 }
 
 function range(start: number, end: number): number[] {
