@@ -1,0 +1,25 @@
+{
+  "name": "app",
+  "version": "1.0.0",
+  "description": "PoC (Proof of Concept) of [fair blind signature scheme using cut and choose](https://link.springer.com/chapter/10.1007/3-540-49264-X_17) written in TS on deno.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc",
+    "start": "node build/main.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kino-ma/fair_blind_signature.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kino-ma/fair_blind_signature/issues"
+  },
+  "homepage": "https://github.com/kino-ma/fair_blind_signature#readme",
+  "dependencies": {
+    "typescript": "^3.9.7"
+  }
+}
