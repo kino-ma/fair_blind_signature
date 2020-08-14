@@ -7,3 +7,5 @@ build:
 
 run:
 	docker run -it --init -p $(PORT):$(PORT) app
+
+.PHONY: buildrun build run
