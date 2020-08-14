@@ -4,6 +4,7 @@ type T_t = { alpha: number, v: number };
 type signature_t = { s: number, T: T_t[] };
 type encrypt_t = (x: number) => number;
 type decrypt_t = (x: number) => number;
+type hash_t = (x: number) => number;
 /*
  * m: メッセージ
  * ID: セッション固有の識別子
@@ -20,8 +21,8 @@ function sign_protocol({ m, ID, n, e, Ej, H, k }
         ID: number;
         n: number;
         e: number;
-        Ej: (x: number) => number;
-        H: (x: number) => number;
+        Ej: encrypt_t;
+        H: hash_t;
         k: number;
     })
     : {
