@@ -74,7 +74,7 @@ function sign_protocol({ m, ID, n, e, Ej, H, k }
     let b: number = Math.pow( PI_mod(m_, n), 1/e ) % n;
 
     let r_: number[] = S_.map(i => r[i]);
-    let s: number = Math.floor(b / PI(r_)) % n
+    let s: number = div_mod(b, PI_mod(r_, n), n);
 
     let T: T_t[] = S_.map(i => ({ alpha: alpha[i], v: v[i] }));
 
@@ -143,9 +143,36 @@ function PI(src: number[]): number {
     return src.reduce((a,b) => a * b);
 }
 
-function PI_mod(src: number[], law: number): number {
-    const src_mod = src.map(n => n % law);
-    return src_mod.reduce((a,b) => a * b % law);
+function PI_mod(src: number[], m: number): number {
+    const src_mod = src.map(n => n % m);
+    return src_mod.reduce((a,b) => a * b % m);
+}
+
+function div_mod(a: number, b: number, m: number): number {
+    const b_inv = mod_inverse(b, m);
+    return a * b_inv;
+}
+
+function mod_inverse(a: number, m: number): number {
+    const { g, x, y } = gcd_extended(a, m);
+    return x % m;
+}
+
+function gcd_extended(a: number, b: number): { g: number, x: number, y: number } {
+    if (a == 0) {
+        return {
+            g: b,
+            x: 0,
+            y: 1
+        }
+    } else {
+        const { g, x, y } = gcd_extended(b % a, a);
+        return {
+            g,
+            x: x - Math.floor(b / a) * y,
+            y
+        }
+    }
 }
 
 function range(start: number, end: number): number[] {
