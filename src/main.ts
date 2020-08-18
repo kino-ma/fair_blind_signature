@@ -71,8 +71,7 @@ function sign_protocol({ m, ID, n, e, Ej, H, k }
     let S_: number[] = complement(range(1, 2*k), S);
 
     let m_: number[] = S_.map((i: number) => ms[i]);
-    //let b: number = Math.pow( PI_mod(m_, n), 1/e ) % n;
-    let b: number = Math.pow( PI(m_), 1/e ) % n;
+    let b: number = Math.pow( PI_mod(m_, n), 1/e ) % n;
 
     let r_: number[] = S_.map(i => r[i]);
     let s: number = Math.floor(b / PI(r_)) % n
@@ -146,7 +145,7 @@ function PI(src: number[]): number {
 
 function PI_mod(src: number[], law: number): number {
     const src_mod = src.map(n => n % law);
-    return PI(src_mod);
+    return src_mod.reduce((a,b) => a * b % law);
 }
 
 function range(start: number, end: number): number[] {
