@@ -23,6 +23,7 @@ function sign_protocol({
   Ej,
   H,
   k,
+  d,
 }: {
   m: number;
   ID: number;
@@ -31,21 +32,21 @@ function sign_protocol({
   Ej: encrypt_t;
   H: hash_t;
   k: number;
+  d: number;
 }): {
   signature: signature_t;
   u_i: number;
 } {
-  // iが1から始まるのでダミーを入れる
-  let r: number[] = [0];
-  let alpha: number[] = [0];
-  let beta: number[] = [0];
+  let r: number[] = [];
+  let alpha: number[] = [];
+  let beta: number[] = [];
 
-  let u: number[] = [0];
-  let v: number[] = [0];
+  let u: number[] = [];
+  let v: number[] = [];
 
-  let ms: number[] = [0];
+  let ms: number[] = [];
 
-  for (let i of range(1, 2 * k)) {
+  for (let i of range(0, 2 * k)) {
     r[i] = random_choose_int(n);
     alpha[i] = random_choose_str();
     beta[i] = random_choose_str();
@@ -53,15 +54,22 @@ function sign_protocol({
     u[i] = Ej(concat(m, alpha[i]));
     v[i] = Ej(concat(ID, beta[i]));
 
-    ms[i] = (Math.pow(r[i], e) * H(concat(u[i], v[i]))) % n;
+    let r_e_i = pow_mod(r[i], e, n) % n;
+    let h_i = H(concat(u[i], v[i])) % n;
+    ms[i] = (r_e_i * h_i) % n;
   }
 
   let S: number[] = random_set(2 * k);
 
   for (let i of S) {
     let x: number = ms[i];
-    let y: number =
-      (Math.pow(r[i], e) * H(concat(u[i], Ej(concat(ID, beta[i]))))) % n;
+
+    let r_e_i = pow_mod(r[i], e, n) % n;
+
+    const v_i = Ej(concat(ID, beta[i]));
+    const h_i = H(concat(u[i], v_i)) % n;
+    let y: number = (r_e_i * h_i) % n;
+
     let valid = x == y;
 
     if (!valid) {
@@ -80,7 +88,7 @@ function sign_protocol({
   let S_: number[] = complement(range(1, 2 * k), S);
 
   let m_: number[] = S_.map((i: number) => ms[i]);
-  let b: number = pow_mod(PI_mod(m_, n), div_mod(1, e, n), n);
+  let b: number = pow_mod(PI_mod(m_, n), d, n);
 
   let r_: number[] = S_.map((i) => r[i]);
   let s: number = div_mod(b, PI_mod(r_, n), n);
@@ -93,7 +101,7 @@ function sign_protocol({
 
 function random_choose_int(n: number): number {
   let r = Math.random();
-  return Math.floor(r * n);
+  return Math.floor(r * (n - 1)) + 1;
 }
 
 function random_choose_str(): number {
@@ -118,7 +126,7 @@ function concat(x: number, y: number): number {
 }
 
 function random_set(max: number): number[] {
-  let S = range(1, max);
+  let S = range(0, max);
 
   while (S.length > max / 2) {
     // ランダムに要素を取り除く
@@ -209,7 +217,7 @@ function gcd_extended(a: number, b: number): [number, number, number] {
 
 function range(start: number, end: number): number[] {
   let arr: number[] = Array.from(
-    Array(end - start + 1),
+    Array(end - start),
     (v, k: number) => k + start
   );
   return arr;
@@ -238,7 +246,7 @@ function typeI(u_i: number, Dj: decrypt_t): number {
 }
 
 function typeII(signature: signature_t, Dj: decrypt_t): number {
-  const decrypted = Dj(signature.T[1].v);
+  const decrypted = Dj(signature.T[0].v);
   const ID = decrypted >> (STR_LEN + 1);
   return ID;
 }
@@ -260,44 +268,59 @@ function check<T extends { toString(): string }>(text: string, v1: T, v2: T) {
 }
 
 function test() {
+  // テストはガバガバになりました。各自直してください。
   console.log("random_choose_int(10):", random_choose_int(10));
   assert("concat(3, 1):", concat(3, 1), 7);
   console.log("random_set(10):", random_set(10));
   assert(
     "complement(range(10), range(5)):",
     complement(range(1, 10), range(1, 5)),
-    [6, 7, 8, 9, 10]
+    [5, 6, 7, 8, 9]
   );
-  assert("PI(range(1, 5)):", PI(range(1, 5)), 1 * 2 * 3 * 4 * 5);
+  assert("PI(range(1, 5)):", PI(range(1, 5)), 1 * 2 * 3 * 4);
   assert(
     "PI_mod(range(1, 5), 13):",
     PI_mod(range(1, 5), 13),
-    (1 * 2 * 3 * 4 * 5) % 13
+    (1 * 2 * 3 * 4) % 13
   );
   assert("div_mod(9, 4, 13):", div_mod(9, 4, 13), 12);
   assert("pow_mod(9, 4, 13):", pow_mod(9, 4, 13), 9);
   assert("mod_inverse(4, 13):", mod_inverse(4, 13), 10);
-  assert("range(1, 5)", range(1, 5), [1, 2, 3, 4, 5]);
+  assert("range(1, 5)", range(1, 5), [1, 2, 3, 4]);
 }
 
 function main() {
-  const m = 123;
+  const m = 120;
   const ID = 456;
-  const n = 999962000357; // 999983 * 999979
-  const e = 7;
-  const Ej = (num: number) => num + 1;
-  const H = (num: number) => num * 2;
-  const k = 40;
+  const p = 17;
+  const q = 11;
 
-  const { signature, u_i } = sign_protocol({ m, ID, n, e, Ej, H, k });
+  const n = p * q;
+  console.log("n = ", n);
+
+  const e = 7;
+  const d = mod_inverse(e, (p - 1) * (q - 1));
+
+  const k = 1;
+
+  //   const c = pow_mod(m, d, n);
+  //   console.log(c);
+  //   const new_m = pow_mod(c, e, n);
+  //   console.log(new_m);
+
+  const Ej = (num: number) => num ** 2;
+  const Dj = (num: number) => Math.floor(num ** (1 / 2));
+
+  const H = (num: number) => (num * 2 + 1) ** 2;
+
+  const { signature, u_i } = sign_protocol({ m, ID, n, e, Ej, H, k, d });
   console.log("s =", signature.s);
 
-  const Dj = (num: number) => num - 1;
   const { s1, s2 } = verify_signature(m, n, e, signature, Ej, H);
   check("signature: ", s1, s2);
   check("typeI:     ", typeI(u_i, Dj), m);
   check("typeII:    ", typeII(signature, Dj), ID);
 }
 
-//test();
+test();
 main();
